@@ -1,11 +1,14 @@
 import logging
 import os
+from dotenv import load_dotenv
+
 from telegram import Update, Document
 from telegram.ext import (
     ApplicationBuilder, CommandHandler,
     MessageHandler, ContextTypes,
     ConversationHandler, filters
 )
+
 from utils import edit_pdf_fields
 
 # Этапы разговора
@@ -15,17 +18,21 @@ PDF, NUMBER, TIME, REGION = range(4)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Хранилище для PDF
+# Загружаем токен из .env
+load_dotenv()
+TOKEN = os.environ.get("BOT_TOKEN")
+
+# Временное хранилище
 user_data_files = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Отправь мне PDF файл.")
+    await update.message.reply_text("Привет! Отправь мне PDF файл, и я заменю в нём номер, время и регион, но QR-код останется прежним.")
     return PDF
 
 async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document: Document = update.message.document
     if not document.file_name.endswith(".pdf"):
-        await update.message.reply_text("Мне нужен PDF файл, ня...")
+        await update.message.reply_text("Мне нужен именно PDF файл.")
         return PDF
 
     file = await document.get_file()
@@ -33,7 +40,7 @@ async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await file.download_to_drive(file_path)
 
     user_data_files[update.message.from_user.id] = file_path
-    await update.message.reply_text("Получила файл! Теперь введи новый номер:")
+    await update.message.reply_text("Файл получен! Введи новый номер:")
     return NUMBER
 
 async def handle_number(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,18 +71,15 @@ async def handle_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove(file_path)
         os.remove(output_path)
     else:
-        await update.message.reply_text("Упс, не нашла твой файл...")
+        await update.message.reply_text("Не удалось найти загруженный файл. Попробуй снова.")
 
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Отменила, ня.")
+    await update.message.reply_text("Окей, отменено.")
     return ConversationHandler.END
 
 if __name__ == "__main__":
-    import os
-    TOKEN = os.environ.get("BOT_TOKEN")  # вставь токен в переменные окружения
-
     app = ApplicationBuilder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
