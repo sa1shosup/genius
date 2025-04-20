@@ -1,0 +1,23 @@
+# Виртуальное окружение
+venv/
+.env
+
+# Python мусор
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# PDF-файлы
+*.pdf
+
+# Логи
+*.log
+
+# IDE-шные файлы
+.vscode/
+.idea/
+
+# Mac / Windows
+.DS_Store
+Thumbs.db
